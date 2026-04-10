@@ -1,52 +1,35 @@
-#!/usr/bin/env python3
-
+##!/usr/bin/env python3
+ 
 import rclpy
 from rclpy.node import Node
 from turtlesim.srv import Spawn
 import random
+ 
+def main(args=None):
+    
+    rclpy.init(args=args)
+    node = Node('simple_spawner')
+    client = node.create_client(Spawn, '/spawn')
 
-class SpawnTarget(Node):
-
-def __init__(self):
-    super().__init__('spawn_target')
-
-    # Create client for /spawn service
-    self.client = self.create_client(Spawn, '/spawn')
-
-    # Wait for service to be available
-    while not self.client.wait_for_service(timeout_sec=1.0):
-        self.get_logger().info('Waiting for /spawn service...')
-
-    # Generate random coordinates
-    x = random.uniform(1.0, 10.0)
+    while not client.wait_for_service(timeout_sec=1.0):
+        node.get_logger().info('Attente du service /spawn...')
+    x = random.uniform(1.0, 10.0)      
     y = random.uniform(1.0, 10.0)
-    theta = random.uniform(0.0, 3.14)
-
-    # Create request
+    theta = random.uniform(0.0, 6.283) 
     request = Spawn.Request()
     request.x = x
     request.y = y
     request.theta = theta
-    request.name = 'turtle_target'
-
-    # Call service
-    future = self.client.call_async(request)
-    future.add_done_callback(self.callback_response)
-
-def callback_response(self, future):
-    try:
-        response = future.result()
-        self.get_logger().info(
-            f"Turtle spawned at random position!"
-        )
-    except Exception as e:
-        self.get_logger().error(f"Service call failed: {e}")
-
-def main(args=None):
-rclpy.init(args=args)
-node = SpawnTarget()
-rclpy.spin(node)
-rclpy.shutdown()
-
-if name == 'main':
-main(
+    request.name = "turtle_target"
+    node.get_logger().info(f"Spawn de turtle_target a x={x:.2f}, y={y:.2f}")
+    future = client.call_async(request)
+    rclpy.spin_until_future_complete(node, future)
+    if future.result() is not None:
+        node.get_logger().info(f" Tortue '{future.result().name}' cree avec succes!")
+    else:
+        node.get_logger().error(f" Erreur : {future.exception()}")
+    node.destroy_node()
+    rclpy.shutdown()
+ 
+if __name__ == '__main__':
+    main()
